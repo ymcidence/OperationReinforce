@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow as tf
 
 
-def create_padding_mask(seq):
-    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+def create_padding_mask(seq, tar=0):
+    seq = tf.cast(tf.math.equal(seq, tar), tf.float32)
     return seq[:, tf.newaxis, tf.newaxis, :]
 
 

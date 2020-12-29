@@ -114,7 +114,7 @@ def _process(file_name, slot: pd.DataFrame, meta: pd.DataFrame, max_time=6):
     writer.close()
 
 
-def make(task_name, train_slot_file, test_slot_file, query_meta_file):
+def make(task_name, train_slot_file, test_slot_file, query_meta_file, max_time=6):
     train_slot, cat1, train_query = _process_slot_feat(train_slot_file)
     test_slot, _, test_query = _process_slot_feat(test_slot_file, cat1=cat1)
     query_meta = pd.read_csv(os.path.join(ROOT_PATH, 'data', query_meta_file))
@@ -123,15 +123,24 @@ def make(task_name, train_slot_file, test_slot_file, query_meta_file):
     test_meta = query_meta[query_meta['Query'].isin(test_query)]
 
     uvcc_cat = train_meta['Category'].drop_duplicates().values
-    uvcc_cat_size = uvcc_cat.__len__() + 1
 
-    train_meta['uvcc'] = _map_dict(train_meta['Category'], uvcc_cat, uvcc_cat_size - 1)
-    test_meta['uvcc'] = _map_dict(test_meta['Category'], uvcc_cat, uvcc_cat_size - 1)
+    train_meta['uvcc'] = _map_dict(train_meta['Category'], uvcc_cat, uvcc_cat.__len__())
+    test_meta['uvcc'] = _map_dict(test_meta['Category'], uvcc_cat, uvcc_cat.__len__())
+
+    meta = {
+        'cat1_dict': cat1,
+        'uvcc_dict': uvcc_cat,
+        'slot_feat': SLOT_FEAT_NAME,
+        'query_feat': QUERY_FEAT_NAME,
+        'max_time': max_time
+    }
+
+    np.save(os.path.join(ROOT_PATH, 'data', task_name, 'meta.npy'), meta)
 
     write_name = os.path.join(task_name, 'train.tfrecords')
-    _process(write_name, train_slot, train_meta)
+    _process(write_name, train_slot, train_meta, max_time=max_time)
     write_name = os.path.join(task_name, 'test.tfrecords')
-    _process(write_name, test_slot, test_meta)
+    _process(write_name, test_slot, test_meta, max_time=max_time)
 
 
 if __name__ == '__main__':
