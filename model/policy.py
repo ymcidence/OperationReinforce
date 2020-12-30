@@ -81,7 +81,7 @@ class REINFORCE(object):
         """
 
         :param inputs: a dict from util.data.dataset.Dataset.next()
-        :param logits: [N T]
+        :param logits: [N L]
         :return:
         """
         t, p, o, n, c = [], [], [], [], []

@@ -8,7 +8,7 @@ class InputLayer(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         self.ns = ns
 
-        self.cat1_emb = tf.keras.layers.Embedding(self.ns.cat1_num + 1, self.ns.d_model)
+        # self.cat1_emb = tf.keras.layers.Embedding(self.ns.cat1_num + 1, self.ns.d_model)
         self.uvcc_emb = tf.keras.layers.Embedding(self.ns.uvcc_num + 1, self.ns.d_model)
         self.rank_emb = tf.keras.layers.Embedding(self.ns.max_time, self.ns.d_model)
 
@@ -24,11 +24,11 @@ class InputLayer(tf.keras.layers.Layer):
 
         x = tf.concat([slot_feat, meta_feat], axis=-1)
 
-        cat1 = self.cat1_emb(inputs['cat1'])  # [N T D]
+        # cat1 = self.cat1_emb(inputs['cat1'])  # [N T D]
         uvcc = self.uvcc_emb(inputs['uvcc'])[:, tf.newaxis, :]  # [N 1 D]
         uvcc = tf.tile(uvcc, [1, self.ns.max_time, 1])  # [N T D]
         rank = self.rank_emb(inputs['rank'])
 
-        x = self.fc1(x, training=training) + cat1 + uvcc + rank
+        x = self.fc1(x, training=training) + uvcc + rank
 
         return x

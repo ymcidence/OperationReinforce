@@ -33,7 +33,7 @@ class Dataset(object):
                 'slot_feat': tf.io.FixedLenFeature([self.max_time * slot_feat.__len__()], tf.float32),
                 'meta_feat': tf.io.FixedLenFeature([query_feat.__len__()], tf.float32),
                 'rank': tf.io.FixedLenFeature([self.max_time], tf.float32),
-                'cat1': tf.io.FixedLenFeature([self.max_time], tf.float32),
+                # 'cat1': tf.io.FixedLenFeature([self.max_time], tf.float32),
                 'uvcc': tf.io.FixedLenFeature([], tf.int64),
                 'total_rev': tf.io.FixedLenFeature([1], tf.float32),
                 'pl_rev': tf.io.FixedLenFeature([1], tf.float32),
@@ -45,7 +45,7 @@ class Dataset(object):
 
             features['slot_feat'] = tf.reshape(features['slot_feat'], [self.max_time, -1])
             features['rank'] = tf.cast(features['rank'], tf.int32)
-            features['cat1'] = tf.cast(features['cat1'], tf.int32)
+            # features['cat1'] = tf.cast(features['cat1'], tf.int32)
             features['uvcc'] = tf.cast(features['uvcc'], tf.int32)
             features['mask'] = tf.cast(features['mask'], tf.int32)
 
