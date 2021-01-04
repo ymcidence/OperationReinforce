@@ -17,8 +17,6 @@ class Dataset(object):
         # noinspection PyUnresolvedReferences
         self.max_time = self.meta['max_time']
         # noinspection PyUnresolvedReferences
-        self.cat1_num = self.meta['cat1_dict'].__len__()
-        # noinspection PyUnresolvedReferences
         self.uvcc_num = self.meta['uvcc_dict'].__len__()
         self._load_data()
 
