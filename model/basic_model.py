@@ -25,6 +25,6 @@ class BasicModel(tf.keras.Model, ABC):
         mask = create_padding_mask(inputs['rank'], tar=0) if mask is None else mask
 
         for layer in self.enc_layer:
-            x, _ = layer(x, training=training, mask=mask)
+            x = layer(x, training=training, mask=mask)
 
         return tf.squeeze(self.fc(x, training=training), axis=-1)
