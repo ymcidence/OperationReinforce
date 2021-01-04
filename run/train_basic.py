@@ -44,6 +44,7 @@ def main():
     ns = parser.parse_args()
     result_path, save_path, summary_path = prepare_training(ns.task_name)
     dataset = Dataset(ns.task_name, ns.batch_size)
+    ns.uvcc_num = dataset.uvcc_num
     model = Model(ns)
     policy = REINFORCE(dataset.meta, ns)
     opt = tf.keras.optimizers.Adam(ns.learning_rate)
