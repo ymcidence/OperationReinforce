@@ -62,6 +62,7 @@ def main():
                     opt.apply_gradients(zip(g, model.trainable_variables))
 
                 if step % 100 == 0:
+                    print('epoch {} step {}: loss {} t {} p {} o {} n {}'.format(i, step, loss, t, p, o, n))
                     tf.summary.scalar('train/batch_revenue', t, step=step)
                     tf.summary.scalar('train/batch_pl_rev', p, step=step)
                     tf.summary.scalar('train/batch_ol_rev', o, step=step)

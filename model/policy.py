@@ -7,7 +7,7 @@ import tensorflow as tf
 class BinomialSampler(tf.keras.layers.Layer):
     def __init__(self, ns, **kwargs):
         super().__init__(**kwargs)
-        self.ns = ns,
+        self.ns = ns
         self.temp = ns.temp
 
     def call(self, inputs, training=True, **kwargs):
@@ -19,6 +19,7 @@ class BinomialSampler(tf.keras.layers.Layer):
         eps = tf.pow(eps, self.temp)
 
         rslt = tf.greater(tf.stop_gradient(inputs), eps)
+        rslt = tf.cast(rslt, tf.float32)
 
         return rslt
 
@@ -28,8 +29,8 @@ class ReplayRewarder(object):
         self.meta = meta
 
     def __call__(self, inputs: dict, action, **kwargs):
-        i_slot_total_rev = self.meta['slot_feat'].index('query_total_rev')
-        i_slot_pl_rev = self.meta['slot_feat'].index('query_total_rev_pl_slots')
+        i_slot_total_rev = self.meta['slot_feat'].index('query_slot_total_rev')
+        i_slot_pl_rev = self.meta['slot_feat'].index('query_slot_total_rev_pl_slots')
         i_slot_total_imp = self.meta['slot_feat'].index('query_slot_impr')
         i_slot_pl_imp = self.meta['slot_feat'].index('query_slot_pl_impr')
 
@@ -105,7 +106,7 @@ class REINFORCE(object):
         t = np.stack(t)  # [T N]
         p = np.stack(p)
         o = np.stack(o)
-        c = tf.stack(c)
+        c = tf.reduce_sum(tf.stack(c), axis=-1)
         n = np.stack(n)  # [T]
 
         score_function = (t + p) / (n + 1e-8) * self.exp_n_pl
@@ -115,8 +116,7 @@ class REINFORCE(object):
 
         loss = tf.reduce_mean(tf.reduce_sum(c * score_function, axis=1), axis=0)
 
-        return loss, np.sum(np.mean(t, axis=0), axis=1), np.sum(np.mean(p, axis=0), axis=1), np.sum(np.mean(o, axis=0),
-                                                                                                    axis=1), np.mean(n)
+        return loss, np.sum(np.mean(t, axis=0)), np.sum(np.mean(p, axis=0)), np.sum(np.mean(o, axis=0)), np.mean(n)
 
     def update_sampler(self, inc=True):
         if inc:

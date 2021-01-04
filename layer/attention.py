@@ -164,7 +164,7 @@ class RelativeAttention(MultiHeadAttention):
         return output, attention_weights
 
     def _get_position_embedding(self, len_q):
-        print(len_q)
+        # print(len_q)
         # starting_point = tf.max(0, self.max_seq - len_q)
         starting_point = tf.math.maximum(0, self.max_seq - len_q)
         e = self.pos_emb[starting_point:, :]
