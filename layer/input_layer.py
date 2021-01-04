@@ -10,7 +10,7 @@ class InputLayer(tf.keras.layers.Layer):
 
         # self.cat1_emb = tf.keras.layers.Embedding(self.ns.cat1_num + 1, self.ns.d_model)
         self.uvcc_emb = tf.keras.layers.Embedding(self.ns.uvcc_num + 1, self.ns.d_model)
-        self.rank_emb = tf.keras.layers.Embedding(self.ns.max_time, self.ns.d_model)
+        self.rank_emb = tf.keras.layers.Embedding(self.ns.max_time + 1, self.ns.d_model)
 
         self.fc1 = tf.keras.Sequential([
             tf.keras.layers.BatchNormalization(),

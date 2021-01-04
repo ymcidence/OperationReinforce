@@ -50,7 +50,7 @@ def main():
     writer = tf.summary.create_file_writer(summary_path)
     checkpoint = tf.train.Checkpoint(opt=opt, model=model)
     step = 0
-    max_n = 90000
+    max_n = 900000
     for i in range(ns.epoch):
         with writer.as_default():
             for x in dataset.train_data:
@@ -75,3 +75,7 @@ def main():
 
             save_name = os.path.join(save_path, 'ym' + str(i))
             checkpoint.save(file_prefix=save_name)
+
+
+if __name__ == '__main__':
+    main()
