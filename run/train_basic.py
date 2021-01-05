@@ -51,7 +51,7 @@ def main():
     writer = tf.summary.create_file_writer(summary_path)
     checkpoint = tf.train.Checkpoint(opt=opt, model=model)
     step = 0
-    max_n = 900000
+    max_n = -1
     for i in range(ns.epoch):
         with writer.as_default():
             for x in dataset.train_data:
@@ -76,8 +76,7 @@ def main():
             if max_n < test_n:
                 policy.update_sampler()
 
-            elif max_n >= 1.1 * test_n:
-                max_n = 1.1 * test_n
+            max_n = test_n
 
             save_name = os.path.join(save_path, 'ym' + str(i))
             checkpoint.save(file_prefix=save_name)
