@@ -178,12 +178,12 @@ class REINFORCE(object):
 
         score_function = (t + p) / (n + 1e-8) * self.exp_n_pl
 
-        # mean_sf = np.mean(score_function, axis=0)
-        # score_function = score_function - mean_sf
+        max_sf = np.max(score_function, axis=0)
+        score_function = score_function / (max_sf + 1)
 
         mmd_loss = self.mmd(prob, self.sampler.temp)
 
-        loss = tf.reduce_mean(c * score_function) * 1e-4 + mmd_loss * 1e4
+        loss = tf.reduce_mean(c * score_function) + mmd_loss
 
         return loss, mmd_loss, np.sum(np.mean(t, axis=0)), np.sum(np.mean(p, axis=0)), np.sum(
             np.mean(o, axis=0)), np.mean(n)
