@@ -4,6 +4,72 @@ import numpy as np
 import tensorflow as tf
 
 
+class MMD(object):
+    def __init__(self, z_dim, kernel='IMQ'):
+        self.kernel = kernel
+        self.z_dim = z_dim
+
+    def mmd_penalty(self, sample_qz, sample_pz):
+        # opts = self.opts
+        kernel = self.kernel
+        n = tf.shape(sample_qz)[0]
+        n = tf.cast(n, tf.int32)
+        nf = tf.cast(n, tf.float32)
+        half_size = (n * n - n) / 2
+
+        norms_pz = tf.reduce_sum(tf.square(sample_pz), axis=1, keepdims=True)
+        dotprods_pz = tf.matmul(sample_pz, sample_pz, transpose_b=True)
+        distances_pz = norms_pz + tf.transpose(norms_pz) - 2. * dotprods_pz
+
+        norms_qz = tf.reduce_sum(tf.square(sample_qz), axis=1, keepdims=True)
+        dotprods_qz = tf.matmul(sample_qz, sample_qz, transpose_b=True)
+        distances_qz = norms_qz + tf.transpose(norms_qz) - 2. * dotprods_qz
+
+        dotprods = tf.matmul(sample_qz, sample_pz, transpose_b=True)
+        distances = norms_qz + tf.transpose(norms_pz) - 2. * dotprods
+
+        if kernel == 'RBF':
+            # Median heuristic for the sigma^2 of Gaussian kernel
+            sigma2_k = tf.nn.top_k(
+                tf.reshape(distances, [-1]), half_size).values[half_size - 1]
+            sigma2_k += tf.nn.top_k(
+                tf.reshape(distances_qz, [-1]), half_size).values[half_size - 1]
+
+            res1 = tf.exp(- distances_qz / 2. / sigma2_k)
+            res1 += tf.exp(- distances_pz / 2. / sigma2_k)
+            res1 = tf.multiply(res1, 1. - tf.eye(n))
+            res1 = tf.reduce_sum(res1) / (nf * nf - nf)
+            res2 = tf.exp(- distances / 2. / sigma2_k)
+            res2 = tf.reduce_sum(res2) * 2. / (nf * nf)
+            stat = res1 - res2
+        elif kernel == 'IMQ':
+            # k(x, y) = C / (C + ||x - y||^2)
+            # C = tf.nn.top_k(tf.reshape(distances, [-1]), half_size).values[half_size - 1]
+            # C += tf.nn.top_k(tf.reshape(distances_qz, [-1]), half_size).values[half_size - 1]
+
+            c_base = self.z_dim
+            stat = 0.
+            for scale in [.1, .2, .5, 1., 2., 5., 10.]:
+                cc = c_base * scale
+                res1 = cc / (cc + distances_qz)
+                res1 += cc / (cc + distances_pz)
+                res1 = tf.multiply(res1, 1. - tf.eye(n))
+                res1 = tf.reduce_sum(res1) / (nf * nf - nf)
+                res2 = cc / (cc + distances)
+                res2 = tf.reduce_sum(res2) * 2. / (nf * nf)
+                stat += res1 - res2
+        else:
+            raise Exception('the kernel is not implemented')
+        return stat
+
+    def __call__(self, feat: tf.Tensor, temp):
+        eps = tf.random.uniform(tf.shape(feat), dtype=tf.float32)
+        eps = tf.pow(eps, temp)
+        eps = tf.cast(tf.greater(eps, .5), tf.float32)
+
+        return tf.reduce_sum(self.mmd_penalty(feat, eps))
+
+
 class BinomialSampler(tf.keras.layers.Layer):
     def __init__(self, ns, **kwargs):
         super().__init__(**kwargs)
@@ -14,7 +80,7 @@ class BinomialSampler(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs)[0]
 
         # noinspection PyUnresolvedReferences
-        eps = tf.random.uniform([batch_size, self.ns.max_time]) if training else .5
+        eps = tf.random.uniform([batch_size, self.ns.max_time], dtype=tf.float32) if training else .5
 
         eps = tf.pow(eps, self.temp)
 
@@ -74,6 +140,7 @@ class REINFORCE(object):
         self.ns = ns
         self.sampler = BinomialSampler(ns)
         self.rewarder = ReplayRewarder(meta)
+        self.mmd = MMD(z_dim=ns.max_time)
         self.sample_time = ns.sample_time
         self.exp_n_pl = ns.exp_n_pl
         self.batch_size = ns.batch_size
@@ -114,9 +181,12 @@ class REINFORCE(object):
 
         score_function = score_function - mean_sf
 
-        loss = tf.reduce_mean(tf.reduce_sum(c * score_function, axis=1), axis=0)
+        mmd_loss = self.mmd(prob, self.sampler.temp)
 
-        return loss, np.sum(np.mean(t, axis=0)), np.sum(np.mean(p, axis=0)), np.sum(np.mean(o, axis=0)), np.mean(n)
+        loss = tf.reduce_mean(tf.reduce_sum(c * score_function, axis=1), axis=0) + mmd_loss
+
+        return loss, mmd_loss, np.sum(np.mean(t, axis=0)), np.sum(np.mean(p, axis=0)), np.sum(
+            np.mean(o, axis=0)), np.mean(n)
 
     def update_sampler(self, inc=True):
         if inc:

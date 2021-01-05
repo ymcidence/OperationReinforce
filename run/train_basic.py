@@ -16,7 +16,7 @@ def hook(model: Model, policy: REINFORCE, dataset: Dataset, step):
     count = 0
     for x in dataset.test_data:
         logits = model(x, training=False)
-        loss, _t, _p, _o, _n = policy(x, logits)
+        loss, mmd, _t, _p, _o, _n = policy(x, logits)
         l += loss
         t += _t
         p += _p
@@ -57,7 +57,7 @@ def main():
             for x in dataset.train_data:
                 with tf.GradientTape() as tape:
                     logits = model(x, training=True)
-                    loss, t, p, o, n = policy(x, logits)
+                    loss, mmd, t, p, o, n = policy(x, logits)
                     g = tape.gradient(loss, sources=model.trainable_variables)
                     opt.apply_gradients(zip(g, model.trainable_variables))
 
@@ -68,12 +68,16 @@ def main():
                     tf.summary.scalar('train/batch_ol_rev', o, step=step)
                     tf.summary.scalar('train/batch_n_pl', n, step=step)
                     tf.summary.scalar('train/loss', loss, step=step)
+                    tf.summary.scalar('train/mmd', mmd, step=step)
 
                 step += 1
             test_n = hook(model, policy, dataset, step)
 
             if max_n < test_n:
                 policy.update_sampler()
+
+            elif max_n >= 1.1 * test_n:
+                max_n = 1.1 * test_n
 
             save_name = os.path.join(save_path, 'ym' + str(i))
             checkpoint.save(file_prefix=save_name)
