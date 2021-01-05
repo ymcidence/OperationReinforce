@@ -183,7 +183,7 @@ class REINFORCE(object):
 
         mmd_loss = self.mmd(prob, self.sampler.temp)
 
-        loss = tf.reduce_mean(c * score_function) * 1e-4 + mmd_loss
+        loss = tf.reduce_mean(c * score_function) * 1e-4 + mmd_loss * 1e3
 
         return loss, mmd_loss, np.sum(np.mean(t, axis=0)), np.sum(np.mean(p, axis=0)), np.sum(
             np.mean(o, axis=0)), np.mean(n)
